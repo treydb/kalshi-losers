@@ -2,7 +2,7 @@ from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from kalshi import get_losing_trades, update_top_ten
+from kalshi import get_losing_trades, update_top_ten_all_time
 
 # Module-level state shared between the scheduler and the API.
 state: dict = {"top_ten": []}
@@ -11,8 +11,8 @@ _scheduler: BackgroundScheduler | None = None
 
 
 def _refresh() -> None:
-    new_trades = get_losing_trades()
-    state["top_ten"] = update_top_ten(state["top_ten"], new_trades)
+    get_losing_trades()
+    state["top_ten"] = update_top_ten_all_time()
 
 
 def refresh_now() -> list[dict]:

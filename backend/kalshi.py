@@ -1,10 +1,11 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-import requests
-import json
+import sqlite3
 import time
-from datetime import date
+from contextlib import contextmanager
+from pathlib import Path
+
+import requests
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -13,6 +14,42 @@ KEY_ID = os.getenv("key_ID")
 
 if not KEY_ID:
     raise RuntimeError("Missing key_ID in backend/.env")
+
+DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR.mkdir(exist_ok=True)
+DB_PATH = DATA_DIR / "trades.db"
+
+
+@contextmanager
+def _connect():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def init_db():
+    with _connect() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS losing_trades (
+                trade_id TEXT PRIMARY KEY,
+                ticker TEXT NOT NULL,
+                title TEXT,
+                taker_side TEXT NOT NULL,
+                entry_price REAL NOT NULL,
+                contracts REAL NOT NULL,
+                loss REAL NOT NULL,
+                trade_date TEXT NOT NULL
+            )
+        """)
+        # Additive migration for DBs created before `title` existed.
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(losing_trades)")}
+        if "title" not in existing:
+            conn.execute("ALTER TABLE losing_trades ADD COLUMN title TEXT")
+
 
 def fetch_settled_markets():
     ts = int(time.time()) - 5 * 60
@@ -24,7 +61,7 @@ def fetch_settled_markets():
             "status": "settled",
             "min_settled_ts": ts,
             "mve_filter": "exclude",
-            "limit": 1000
+            "limit": 1000,
         }
         if cursor:
             params["cursor"] = cursor
@@ -40,52 +77,80 @@ def fetch_settled_markets():
 
     return all_markets
 
-def find_losing_trades(markets):
-    losing_trades = []
-    for market in markets:
-        ticker = market['ticker']
-        r = requests.get(f"{API_BASE}/markets/trades", params={"ticker": ticker, "limit": 1000})
+
+def _fetch_market_trades(ticker):
+    trades = []
+    cursor = None
+    while True:
+        params = {"ticker": ticker, "limit": 1000}
+        if cursor:
+            params["cursor"] = cursor
+        r = requests.get(f"{API_BASE}/markets/trades", params=params)
         r.raise_for_status()
         time.sleep(0.05)
         data = r.json()
-        trades = data["trades"]
+        trades.extend(data.get("trades", []))
         cursor = data.get("cursor")
-        while cursor:
-            r = requests.get(
-                f"{API_BASE}/markets/trades", 
-                params={"ticker": ticker, "limit": 1000, "cursor": cursor})
-            r.raise_for_status()
-            data = r.json()
-            trades.extend(data["trades"])
-            cursor = data.get("cursor")
-            time.sleep(0.05)
-        for trade in trades:
-            if trade['taker_side'] != market['result']:
-                yes_price = float(trade['yes_price_dollars'])
-                no_price = float(trade['no_price_dollars'])
-                contracts = float(trade['count_fp'])
-                entry_price = yes_price if trade['taker_side'] == 'yes' else no_price
-                loss = round(entry_price * contracts, 2)
+        if not cursor:
+            break
+    return trades
 
-                losing_trades.append({
-                    "ticker": ticker,
-                    "taker_side": trade['taker_side'],
-                    "entry_price": entry_price,
-                    "contracts": contracts,
-                    "loss": loss
-                })
-    return losing_trades
+
+def save_losing_trades(markets):
+    with _connect() as conn:
+        for market in markets:
+            ticker = market["ticker"]
+            result = market.get("result")
+            if not result:
+                continue
+
+            title = market.get("title") or market.get("yes_sub_title") or ""
+
+            for trade in _fetch_market_trades(ticker):
+                if trade["taker_side"] == result:
+                    continue
+
+                yes_price = float(trade["yes_price_dollars"])
+                no_price = float(trade["no_price_dollars"])
+                contracts = float(trade["count_fp"])
+                entry_price = yes_price if trade["taker_side"] == "yes" else no_price
+                loss = round(entry_price * contracts, 2)
+                # Kalshi trades carry created_time; fall back to settlement-day if absent.
+                trade_date = trade.get("created_time", "")[:10]
+
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO losing_trades
+                        (trade_id, ticker, title, taker_side, entry_price, contracts, loss, trade_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        trade["trade_id"],
+                        ticker,
+                        title,
+                        trade["taker_side"],
+                        entry_price,
+                        contracts,
+                        loss,
+                        trade_date,
+                    ),
+                )
+
+
+def update_top_ten_all_time():
+    with _connect() as conn:
+        rows = conn.execute("""
+            SELECT ticker, title, taker_side, entry_price, contracts, loss, trade_date
+            FROM losing_trades
+            ORDER BY loss DESC
+            LIMIT 10
+        """).fetchall()
+    return [dict(row) for row in rows]
+
 
 def get_losing_trades():
     print("Fetching settled markets...")
     markets = fetch_settled_markets()
     print(f"Found {len(markets)} settled markets")
     print("Finding losing trades...")
-    losing_trades = find_losing_trades(markets)
-    print(f"Found {len(losing_trades)} losing trades")
-    return sorted(losing_trades, key=lambda x: x['loss'], reverse=True)
-
-def update_top_ten(top_ten, new_trades):
-    combined = top_ten + new_trades
-    return sorted(combined, key=lambda x: x['loss'], reverse=True)[:10]
-
+    save_losing_trades(markets)

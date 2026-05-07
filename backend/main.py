@@ -2,12 +2,13 @@ from contextlib import asynccontextmanager
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from kalshi import init_db
 import scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_db()
     scheduler.start()
     try:
         yield
