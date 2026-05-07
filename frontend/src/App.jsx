@@ -70,7 +70,7 @@ export default function App() {
               backgroundClip: "text",
             }}
           >
-            Biggest Losers
+            Kalshi's  Biggest Losers
           </h1>
         </div>
         <Countdown intervalMs={REFRESH_MS} />

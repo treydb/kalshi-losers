@@ -1,32 +1,69 @@
 import TradeCard from "./TradeCard.jsx";
 
 export default function Leaderboard({ trades }) {
-  if (!trades.length) {
-    return (
+  return (
+    <section
+      style={{
+        marginTop: "2rem",
+        padding: "1rem 1rem 1.1rem",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius)",
+      }}
+    >
       <div
         style={{
-          padding: "3rem 1rem",
-          textAlign: "center",
-          color: "var(--text-muted)",
-          border: "1px dashed var(--border)",
-          borderRadius: "var(--radius)",
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: "0.75rem",
+          marginBottom: "0.75rem",
         }}
       >
-        No losing trades yet — check back after the next refresh.
+        <h2
+          style={{
+            fontSize: "0.7rem",
+            fontWeight: 600,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            margin: 0,
+          }}
+        >
+          All-Time Leaderboard
+        </h2>
+        {trades.length > 0 && (
+          <span
+            style={{
+              fontSize: "0.7rem",
+              color: "var(--text-faint)",
+            }}
+          >
+            {trades.length} {trades.length === 1 ? "trade" : "trades"}
+          </span>
+        )}
       </div>
-    );
-  }
 
-  return (
-    <div>
-      <h2>All-Time Leaderboard</h2>
-      <ol style={{ display: "grid", gap: "0.6rem" }}>
-        {trades.map((trade, i) => (
-          <li key={`${trade.ticker}-${i}`}>
-            <TradeCard rank={i + 1} trade={trade} />
-          </li>
-        ))}
-      </ol>
-    </div>
+      {trades.length === 0 ? (
+        <div
+          style={{
+            padding: "1.5rem 1rem",
+            textAlign: "center",
+            fontSize: "0.85rem",
+            color: "var(--text-muted)",
+            border: "1px dashed var(--border)",
+            borderRadius: "var(--radius)",
+          }}
+        >
+          No losing trades yet — check back after the next refresh.
+        </div>
+      ) : (
+        <ol style={{ display: "grid", gap: ".4rem", margin: 0, padding: 0, listStyle: "none" }}>
+          {trades.map((trade, i) => (
+            <li key={`${trade.ticker}-${i}`}>
+              <TradeCard rank={i + 1} trade={trade} />
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }
