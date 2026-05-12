@@ -36,7 +36,11 @@ def health():
 def trades():
     return {"trades": scheduler.get_top_ten()}
 
+@app.get("/api/trades/daily")
+def trades_daily():
+    return {"trades": scheduler.get_top_ten_daily()}
+
 
 @app.post("/api/refresh")
 def refresh():
-    return {"trades": scheduler.refresh_now()}
+    return scheduler.refresh_now()

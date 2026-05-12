@@ -1,4 +1,4 @@
-import { formatDollar } from "./utils";
+import { formatDollar, formatContracts, formatTradeDate } from "./utils";
 import goldMedalGif from "./images/gold-medal.gif";
 import silverMedalGif from "./images/silver-medal.gif";
 import bronzeMedalGif from "./images/bronze-medal.gif";
@@ -18,11 +18,21 @@ const DEFAULT_RANK_STYLE = {
 export default function TradeCard({ rank, trade }) {
   const rankStyle = RANK_STYLES[rank] || DEFAULT_RANK_STYLE;
   const sideIsYes = trade.taker_side?.toLowerCase() === "yes";
+  const sideLabel = (trade.taker_side || "").toUpperCase();
   const medalClass =
     rank === 1 ? "medal-card first-place"
     : rank === 2 ? "medal-card second-place"
     : rank === 3 ? "medal-card third-place"
     : undefined;
+
+  // The `subtitle` (yes_sub_title) is the side-specific name for the market —
+  // typically a team like "Yankees" or "Orioles". We lead with it so two
+  // sibling markets that share a `title` (e.g. "...vs Baltimore Winner?")
+  // don't look like duplicates.
+  const headline = trade.subtitle || trade.title || trade.ticker;
+  const subline = trade.subtitle && trade.title && trade.subtitle !== trade.title
+    ? trade.title
+    : null;
 
   return (
     <div
@@ -32,9 +42,9 @@ export default function TradeCard({ rank, trade }) {
         justifyContent: "space-between",
         alignItems: "center",
         gap: "0.75rem",
-        padding: "0.55rem 0.75rem",
+        padding: "0.6rem 0.8rem",
         background: "var(--bg-elev)",
-        border: "1px solid var(--border)", 
+        border: "1px solid var(--border)",
         borderRadius: "var(--radius)",
         transition: "background 120ms ease, border-color 120ms ease, transform 120ms ease",
       }}
@@ -48,40 +58,11 @@ export default function TradeCard({ rank, trade }) {
       }}
     >
       {rank === 1 ? (
-        <img
-          src={goldMedalGif}
-          alt="1st place"
-          style={{
-            flexShrink: 0,
-            width: 32,
-            height: 32,
-            objectFit: "contain",
-          }}
-        />
-      ) : 
-      rank === 2 ? (
-        <img
-          src={silverMedalGif}
-          alt="1st place"
-          style={{
-            flexShrink: 0,
-            width: 32,
-            height: 32,
-            objectFit: "contain",
-          }}
-        />
-      ) : 
-      rank === 3 ? (
-        <img
-          src={bronzeMedalGif}
-          alt="1st place"
-          style={{
-            flexShrink: 0,
-            width: 32,
-            height: 32,
-            objectFit: "contain",
-          }}
-        />
+        <img src={goldMedalGif} alt="1st place" style={medalImgStyle} />
+      ) : rank === 2 ? (
+        <img src={silverMedalGif} alt="2nd place" style={medalImgStyle} />
+      ) : rank === 3 ? (
+        <img src={bronzeMedalGif} alt="3rd place" style={medalImgStyle} />
       ) : (
         <div
           style={{
@@ -102,33 +83,52 @@ export default function TradeCard({ rank, trade }) {
           {rank}
         </div>
       )}
+
       <div style={{ minWidth: 0, flex: 1 }}>
         <div
           style={{
             fontWeight: 600,
-            fontSize: "0.85rem",
+            fontSize: "0.92rem",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             color: "var(--text)",
+            lineHeight: 1.25,
           }}
-          title={trade.title || trade.ticker}
+          title={subline ? `${headline} — ${subline}` : headline}
         >
-          {trade.title || trade.ticker}
+          {headline}
         </div>
+
+        {subline && (
+          <div
+            style={{
+              fontSize: "0.72rem",
+              color: "var(--text-faint)",
+              marginTop: "0.1rem",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {subline}
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: "0.5rem",
-            marginTop: "0.2rem",
+            marginTop: "0.35rem",
             fontSize: "0.72rem",
             color: "var(--text-muted)",
           }}
         >
           <span
             style={{
-              padding: "0.1rem 0.45rem",
+              padding: "0.1rem 0.5rem",
               borderRadius: "999px",
               fontWeight: 600,
               fontSize: "0.7rem",
@@ -137,20 +137,32 @@ export default function TradeCard({ rank, trade }) {
               background: sideIsYes ? "rgba(80, 200, 130, 0.12)" : "rgba(255, 77, 109, 0.12)",
               border: `1px solid ${sideIsYes ? "rgba(80, 200, 130, 0.3)" : "rgba(255, 77, 109, 0.3)"}`,
             }}
+            title={
+              trade.subtitle
+                ? `Bought ${sideLabel} on "${trade.subtitle}"`
+                : `Bought ${sideLabel}`
+            }
           >
-            {(trade.taker_side || "").toUpperCase()}
+            {trade.subtitle ? `${sideLabel} · ${trade.subtitle}` : sideLabel}
           </span>
-          <span>
-            ${formatDollar(trade.entry_price)} &times; {trade.contracts}
+
+          <span title="Contracts × entry price">
+            {formatContracts(trade.contracts)} @ ${formatDollar(trade.entry_price)}
           </span>
-          <span>
-            {trade.trade_date}
+
+          <span>{formatTradeDate(trade.trade_date)}</span>
+
+          <span
+            title={trade.ticker}
+            style={{
+              color: "var(--text-faint)",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              fontSize: "0.7rem",
+              cursor: "help",
+            }}
+          >
+            ·
           </span>
-          {trade.title && (
-            <span style={{ color: "var(--text-faint)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "0.72rem" }}>
-              {trade.ticker}
-            </span>
-          )}
         </div>
       </div>
 
@@ -158,7 +170,7 @@ export default function TradeCard({ rank, trade }) {
         style={{
           flexShrink: 0,
           fontWeight: 700,
-          fontSize: "0.9rem",
+          fontSize: "0.95rem",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
           color: "var(--accent)",
           letterSpacing: "-0.01em",
@@ -169,3 +181,10 @@ export default function TradeCard({ rank, trade }) {
     </div>
   );
 }
+
+const medalImgStyle = {
+  flexShrink: 0,
+  width: 32,
+  height: 32,
+  objectFit: "contain",
+};

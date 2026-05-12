@@ -1,7 +1,10 @@
+#This script is used to fetch the losing trades from the Kalshi API and save them to a database.
+
 import os
 import sqlite3
 import time
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -20,8 +23,24 @@ DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "trades.db"
 
 
+def _local_trade_date(created_iso: str) -> str:
+    """Return the local-date (YYYY-MM-DD) for a Kalshi UTC `created_time`.
+
+    Kalshi sends ISO-8601 UTC strings like "2026-05-12T01:15:00Z". We convert
+    to the server's local timezone so the daily leaderboard matches the user's
+    intuitive "today" instead of the UTC day.
+    """
+    if not created_iso:
+        return ""
+    try:
+        utc_dt = datetime.fromisoformat(created_iso.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    return utc_dt.astimezone().date().isoformat()
+
+
 @contextmanager
-def _connect():
+def connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
@@ -32,12 +51,13 @@ def _connect():
 
 
 def init_db():
-    with _connect() as conn:
+    with connect() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS losing_trades (
                 trade_id TEXT PRIMARY KEY,
                 ticker TEXT NOT NULL,
                 title TEXT,
+                subtitle TEXT,
                 taker_side TEXT NOT NULL,
                 entry_price REAL NOT NULL,
                 contracts REAL NOT NULL,
@@ -45,10 +65,12 @@ def init_db():
                 trade_date TEXT NOT NULL
             )
         """)
-        # Additive migration for DBs created before `title` existed.
+        # Additive migrations for DBs created before newer columns existed.
         existing = {row["name"] for row in conn.execute("PRAGMA table_info(losing_trades)")}
         if "title" not in existing:
             conn.execute("ALTER TABLE losing_trades ADD COLUMN title TEXT")
+        if "subtitle" not in existing:
+            conn.execute("ALTER TABLE losing_trades ADD COLUMN subtitle TEXT")
 
 
 def fetch_settled_markets():
@@ -97,14 +119,21 @@ def _fetch_market_trades(ticker):
 
 
 def save_losing_trades(markets):
-    with _connect() as conn:
+    with connect() as conn:
         for market in markets:
             ticker = market["ticker"]
             result = market.get("result")
             if not result:
                 continue
 
-            title = market.get("title") or market.get("yes_sub_title") or ""
+            # `title` is the broad event question (e.g. "New York Y vs Baltimore Winner?").
+            # `subtitle` (yes_sub_title) names the specific sibling market — usually the team
+            # the YES side is betting on. Keeping them separate lets the UI disambiguate
+            # otherwise-identical-looking sibling markets.
+            title = market.get("title") or ""
+            subtitle = market.get("yes_sub_title") or ""
+            if not title:
+                title = subtitle
 
             for trade in _fetch_market_trades(ticker):
                 if trade["taker_side"] == result:
@@ -115,19 +144,19 @@ def save_losing_trades(markets):
                 contracts = float(trade["count_fp"])
                 entry_price = yes_price if trade["taker_side"] == "yes" else no_price
                 loss = round(entry_price * contracts, 2)
-                # Kalshi trades carry created_time; fall back to settlement-day if absent.
-                trade_date = trade.get("created_time", "")[:10]
+                trade_date = _local_trade_date(trade.get("created_time", ""))
 
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO losing_trades
-                        (trade_id, ticker, title, taker_side, entry_price, contracts, loss, trade_date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        (trade_id, ticker, title, subtitle, taker_side, entry_price, contracts, loss, trade_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         trade["trade_id"],
                         ticker,
                         title,
+                        subtitle,
                         trade["taker_side"],
                         entry_price,
                         contracts,
@@ -135,17 +164,6 @@ def save_losing_trades(markets):
                         trade_date,
                     ),
                 )
-
-
-def update_top_ten_all_time():
-    with _connect() as conn:
-        rows = conn.execute("""
-            SELECT ticker, title, taker_side, entry_price, contracts, loss, trade_date
-            FROM losing_trades
-            ORDER BY loss DESC
-            LIMIT 10
-        """).fetchall()
-    return [dict(row) for row in rows]
 
 
 def get_losing_trades():

@@ -1,6 +1,6 @@
 import TradeCard from "./TradeCard.jsx";
 
-export default function Leaderboard({ trades }) {
+export default function Leaderboard({ trades, title }) {
   return (
     <section
       style={{
@@ -28,7 +28,7 @@ export default function Leaderboard({ trades }) {
             margin: 0,
           }}
         >
-          All-Time Leaderboard
+          {title || "Leaderboard"}
         </h2>
         {trades.length > 0 && (
           <span

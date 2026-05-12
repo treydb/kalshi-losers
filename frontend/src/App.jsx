@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchTrades } from "./api.js";
+import { fetchTrades, fetchTradesDaily } from "./api.js";
 import Leaderboard from "./Leaderboard.jsx";
 import Countdown from "./Countdown.jsx";
 
@@ -7,13 +7,15 @@ const REFRESH_MS = 60_000;
 
 export default function App() {
   const [trades, setTrades] = useState([]);
+  const [tradesDaily, setTradesDaily] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     try {
-      const data = await fetchTrades();
+      const [data, dataDaily] = await Promise.all([fetchTrades(), fetchTradesDaily()]);
       setTrades(data);
+      setTradesDaily(dataDaily)
       setError(null);
     } catch (e) {
       setError(e.message);
@@ -92,7 +94,12 @@ export default function App() {
           Error: {error}
         </p>
       )}
-      {!loading && !error && <Leaderboard trades={trades} />}
+      {!loading && !error && (
+        <>
+          <Leaderboard trades={tradesDaily} title="Today's Leaderboard" />
+          <Leaderboard trades={trades} title="All-Time Leaderboard" />
+        </>
+      )}
     </div>
   );
 }
