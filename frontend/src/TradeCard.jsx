@@ -139,11 +139,11 @@ export default function TradeCard({ rank, trade }) {
             }}
             title={
               trade.subtitle
-                ? `Bought ${sideLabel} on "${trade.subtitle}"`
-                : `Bought ${sideLabel}`
+                ? `Bought ${sideLabel}`
+                : `Bought ${sideLabel} on "${trade.subtitle}"`
             }
           >
-            {trade.subtitle ? `${sideLabel} · ${trade.subtitle}` : sideLabel}
+            {sideLabel}
           </span>
 
           <span title="Contracts × entry price">
