@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchTrades, fetchTradesDaily } from "./api.js";
+import * as api from "./api.js";
 import Leaderboard from "./Leaderboard.jsx";
 import Countdown from "./Countdown.jsx";
 
@@ -8,14 +8,29 @@ const REFRESH_MS = 60_000;
 export default function App() {
   const [trades, setTrades] = useState([]);
   const [tradesDaily, setTradesDaily] = useState([]);
+  const [count, setCount] = useState(0);
+  const [countDaily, setCountDaily] = useState(0);
+  const [totalLoss, setTotalLoss] = useState(0.00);
+  const [totalLossDaily, setTotalLossDaily] = useState(0.00);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     try {
-      const [data, dataDaily] = await Promise.all([fetchTrades(), fetchTradesDaily()]);
+      const [data, dataDaily, tradesCount, tradesCountDaily, totalLoss, totalLossDaily] = await Promise.all([
+        api.fetchTrades(),
+        api.fetchTradesDaily(),
+        api.fetchTradesCount(),
+        api.fetchTradesCountDaily(),
+        api.fetchTradesTotalLoss(),
+        api.fetchTradesTotalLossDaily(),
+      ]);
       setTrades(data);
-      setTradesDaily(dataDaily)
+      setTradesDaily(dataDaily);
+      setCount(tradesCount);
+      setCountDaily(tradesCountDaily);
+      setTotalLoss(totalLoss);
+      setTotalLossDaily(totalLossDaily);
       setError(null);
     } catch (e) {
       setError(e.message);
@@ -33,7 +48,7 @@ export default function App() {
   return (
     <div
       style={{
-        maxWidth: 760,
+        maxWidth: 950,
         margin: "0 auto",
         padding: "3rem 1.25rem 4rem",
       }}
@@ -96,8 +111,8 @@ export default function App() {
       )}
       {!loading && !error && (
         <>
-          <Leaderboard trades={tradesDaily} title="Today's Leaderboard" />
-          <Leaderboard trades={trades} title="All-Time Leaderboard" />
+          <Leaderboard trades={tradesDaily} count={countDaily} totalLoss={totalLossDaily} title="Today's Leaderboard" />
+          <Leaderboard trades={trades} count={count} totalLoss={totalLoss} title="All-Time Leaderboard" />
         </>
       )}
     </div>

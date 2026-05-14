@@ -25,13 +25,12 @@ export default function TradeCard({ rank, trade }) {
     : rank === 3 ? "medal-card third-place"
     : undefined;
 
-  // The `subtitle` (yes_sub_title) is the side-specific name for the market —
-  // typically a team like "Yankees" or "Orioles". We lead with it so two
-  // sibling markets that share a `title` (e.g. "...vs Baltimore Winner?")
-  // don't look like duplicates.
-  const headline = trade.subtitle || trade.title || trade.ticker;
-  const subline = trade.subtitle && trade.title && trade.subtitle !== trade.title
-    ? trade.title
+  // Lead with the broad market question (e.g. "Yankees vs Orioles Winner?")
+  // and drop the side-specific subtitle (e.g. "Yankees") into the smaller
+  // subline so the headline stays the same shape for every market type.
+  const headline = trade.title || trade.subtitle || trade.ticker;
+  const subline = trade.subtitle && trade.subtitle !== trade.title
+    ? trade.subtitle
     : null;
 
   return (
@@ -139,8 +138,8 @@ export default function TradeCard({ rank, trade }) {
             }}
             title={
               trade.subtitle
-                ? `Bought ${sideLabel}`
-                : `Bought ${sideLabel} on "${trade.subtitle}"`
+                ? `Bought ${sideLabel} on "${trade.subtitle}"`
+                : `Bought ${sideLabel}`
             }
           >
             {sideLabel}

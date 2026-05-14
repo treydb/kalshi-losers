@@ -18,9 +18,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Biggest Losers API", lifespan=lifespan)
 
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL")],
+    allow_origins=[o for o in [frontend_url] if o],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,7 +41,18 @@ def trades():
 @app.get("/api/trades/daily")
 def trades_daily():
     return {"trades": scheduler.get_top_ten_daily()}
-
+@app.get("/api/trades/count")
+def trades_count():
+    return {"count": scheduler.get_count()}
+@app.get("/api/trades/count/daily")
+def trades_daily_count():
+    return {"daily_count": scheduler.get_daily_count()}
+@app.get("/api/trades/total_loss")
+def trades_total_loss():
+    return {"total_loss": scheduler.get_total_loss()}
+@app.get("/api/trades/total_loss/daily")
+def trades_daily_total_loss():
+    return {"daily_total_loss": scheduler.get_daily_total_loss()}
 
 @app.post("/api/refresh")
 def refresh():

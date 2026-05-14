@@ -1,6 +1,7 @@
 import TradeCard from "./TradeCard.jsx";
+import { formatDollar} from "./utils";
 
-export default function Leaderboard({ trades, title }) {
+export default function Leaderboard({ trades, count, totalLoss, title }) {
   return (
     <section
       style={{
@@ -56,7 +57,16 @@ export default function Leaderboard({ trades, title }) {
           No losing trades yet — check back after the next refresh.
         </div>
       ) : (
-        <ol style={{ display: "grid", gap: ".4rem", margin: 0, padding: 0, listStyle: "none" }}>
+        <ol style={{ 
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr)",
+          gap: ".4rem", 
+          margin: 0, 
+          padding: 0, 
+          listStyle: "none", 
+          overflowY: "auto",
+          overflowX: "hidden"
+        }}>
           {trades.map((trade, i) => (
             <li key={`${trade.ticker}-${i}`}>
               <TradeCard rank={i + 1} trade={trade} />
@@ -64,6 +74,33 @@ export default function Leaderboard({ trades, title }) {
           ))}
         </ol>
       )}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: "0.75rem",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "0.7rem",
+            color: "var(--text-faint)",
+            marginTop: "0.5rem",
+          }}
+        >
+          Total losing trades: {count.toLocaleString()}
+        </span>
+        <span
+          style={{
+            fontSize: "0.7rem",
+            color: "var(--text-faint)",
+            marginTop: "0.5rem",
+          }}
+        >
+          Total loss: ${formatDollar(totalLoss ?? 0)}
+        </span>
+      </div>
     </section>
   );
 }
