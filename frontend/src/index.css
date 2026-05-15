@@ -1,22 +1,26 @@
 :root {
-  color-scheme: dark;
-  --bg: #101010;
-  --bg-accent: rgb(26, 89, 26);
-  --bg-elev: #14181d;
-  --bg-elev-hover: #1a1f26;
+  color-scheme: light;
+  --bg: #e8ddbb;
+  --bg-accent: rgb(40, 40, 40);
+  --bg-elev: #fafafa;
+  --bg-elev-hover: #d6d6d6;
   --border: #232a33;
-  --border-strong: #2e3742;
-  --text: #e7ecf2;
-  --text-muted: #8a93a0;
-  --text-faint: #5b626c;
-  --accent: #ff4d6d;
-  --accent-soft: rgba(255, 77, 109, 0.12);
+  --border-strong: #1a2028;
+  --text: #000000;
+  --text-secondary: #e4e4e4;
+  --text-muted: rgba(0, 0, 0, 0.723);
+  --text-faint: rgb(0, 0, 0);
+  --red: #b60021;
+  --accent: #b60021;
+  --accent-soft: rgba(182, 0, 33, 0.1);
   --gold: #f5c451;
   --silver: #c8d0d8;
   --bronze: #d9874a;
 
   --radius: 12px;
   --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -32,13 +36,16 @@ body,
 }
 
 body {
-  background: var(--bg);  
+  background: var(--bg);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 h1,
@@ -61,28 +68,350 @@ ul {
 }
 
 .medal-card {
-  border-width: 1px !important;
+  border-width: 3px !important;
   border-style: solid !important;
+  box-shadow: var(--shadow-sm);
 }
 
 .first-place {
   border-color: var(--gold) !important;
   box-shadow:
+    var(--shadow-sm),
     0 0 0 1px rgba(245, 196, 81, 0.25),
-    0 0 10px rgba(245, 196, 81, 0.3);
+    0 2px 12px rgba(245, 196, 81, 0.22);
 }
 
 .second-place {
   border-color: var(--silver) !important;
   box-shadow:
+    var(--shadow-sm),
     0 0 0 1px rgba(200, 208, 216, 0.2),
-    0 0 10px rgba(200, 208, 216, 0.22);
+    0 2px 12px rgba(200, 208, 216, 0.18);
 }
 
 .third-place {
   border-color: var(--bronze) !important;
   box-shadow:
+    var(--shadow-sm),
     0 0 0 1px rgba(217, 135, 74, 0.22),
-    0 0 10px rgba(217, 135, 74, 0.28);
+    0 2px 12px rgba(217, 135, 74, 0.2);
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 3rem max(1.25rem, env(safe-area-inset-right)) 4rem max(1.25rem, env(safe-area-inset-left));
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--border);
+}
+
+.app-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 0.45rem;
+}
+
+.page-title {
+  font-size: clamp(1.35rem, 5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.app-message {
+  font-size: 0.9rem;
+}
+
+.app-message--loading {
+  color: var(--text-muted);
+  padding: 1rem 0;
+}
+
+.app-message--error {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.leaderboard-section {
+  margin-top: 2rem;
+  padding: 1.15rem;
+  border: 5px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--bg-elev);
+  box-shadow: var(--shadow-md);
+}
+
+.leaderboard-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.leaderboard-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.leaderboard-count {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+}
+
+.leaderboard-empty {
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  border: 5px dashed var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.leaderboard-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.leaderboard-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--border);
+}
+
+.leaderboard-stat {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.leaderboard-stat--loss {
+  font-variant-numeric: tabular-nums;
+}
+
+.trade-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-elev);
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.trade-card__rank {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.72rem;
+  border-radius: 999px;
+}
+
+.trade-card__medal {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.trade-card__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.trade-card__headline {
+  font-weight: 600;
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.trade-card__subline {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trade-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.trade-card__side {
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: black;
+  border: 2px solid black;
+}
+
+.trade-card__side--yes {
+  background: rgb(72, 207, 128);
+}
+
+.trade-card__side--no {
+  background: rgb(229, 95, 95);
+}
+
+.trade-card__ticker-dot {
+  color: var(--text-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  cursor: help;
+}
+
+.trade-card__loss {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--red);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  :root {
+    font-size: 14px;
+  }
+
+  .app-shell {
+    padding: 1.25rem max(1rem, env(safe-area-inset-right)) 2.5rem max(1rem, env(safe-area-inset-left));
+  }
+
+  .app-header {
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .app-header__title {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .app-header__countdown {
+    flex-shrink: 0;
+  }
+
+  .leaderboard-section {
+    margin-top: 1.5rem;
+    padding: 0.85rem;
+    border-width: 3px;
+  }
+
+  .leaderboard-empty {
+    padding: 1.25rem 1rem;
+    border-width: 3px;
+    font-size: 0.8rem;
+  }
+
+  .trade-card {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.55rem 0.65rem;
+    border-width: 2px;
+  }
+
+  .medal-card {
+    border-width: 2px !important;
+  }
+
+  .trade-card__medal {
+    width: 28px;
+    height: 28px;
+  }
+
+  .trade-card__rank {
+    width: 22px;
+    height: 22px;
+    font-size: 0.65rem;
+  }
+
+  .trade-card__headline {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .trade-card__loss {
+    width: 100%;
+    text-align: right;
+    font-size: 0.88rem;
+    margin-top: 0.15rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .leaderboard-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 400px) {
+  :root {
+    font-size: 13px;
+  }
+
+  .app-shell {
+    padding: 1rem max(0.75rem, env(safe-area-inset-right)) 2rem max(0.75rem, env(safe-area-inset-left));
+  }
 }
 

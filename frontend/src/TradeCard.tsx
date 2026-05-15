@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type { Trade } from "./api";
 import { formatDollar, formatContracts, formatTradeDate } from "./utils";
 import goldMedalGif from "./images/gold-medal.gif";
@@ -18,8 +17,8 @@ const RANK_STYLES: Record<number, RankStyle> = {
 };
 
 const DEFAULT_RANK_STYLE: RankStyle = {
-  color: "var(--text-muted)",
-  background: "var(--bg)",
+  color: "var(--text-secondary)",
+  background: "var(--bg-accent)",
   shadow: "0 0 0 1px var(--border-strong)",
 };
 
@@ -38,28 +37,16 @@ export default function TradeCard({ rank, trade }: TradeCardProps) {
     : rank === 3 ? "medal-card third-place"
     : undefined;
 
-  // Lead with the broad market question (e.g. "Yankees vs Orioles Winner?")
-  // and drop the side-specific subtitle (e.g. "Yankees") into the smaller
-  // subline so the headline stays the same shape for every market type.
   const headline = trade.title || trade.subtitle || trade.ticker;
   const subline = trade.subtitle && trade.subtitle !== trade.title
     ? trade.subtitle
     : null;
 
+  const cardClass = medalClass ? `trade-card ${medalClass}` : "trade-card";
+
   return (
     <div
-      className={medalClass}
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "0.75rem",
-        padding: "0.6rem 0.8rem",
-        background: "var(--bg-elev)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        transition: "background 120ms ease, border-color 120ms ease, transform 120ms ease",
-      }}
+      className={cardClass}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = "var(--bg-elev-hover)";
         if (!medalClass) e.currentTarget.style.borderColor = "var(--border-strong)";
@@ -70,23 +57,15 @@ export default function TradeCard({ rank, trade }: TradeCardProps) {
       }}
     >
       {rank === 1 ? (
-        <img src={goldMedalGif} alt="1st place" style={medalImgStyle} />
+        <img src={goldMedalGif} alt="1st place" className="trade-card__medal" />
       ) : rank === 2 ? (
-        <img src={silverMedalGif} alt="2nd place" style={medalImgStyle} />
+        <img src={silverMedalGif} alt="2nd place" className="trade-card__medal" />
       ) : rank === 3 ? (
-        <img src={bronzeMedalGif} alt="3rd place" style={medalImgStyle} />
+        <img src={bronzeMedalGif} alt="3rd place" className="trade-card__medal" />
       ) : (
         <div
+          className="trade-card__rank"
           style={{
-            flexShrink: 0,
-            width: 26,
-            height: 26,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: "0.72rem",
-            borderRadius: "999px",
             color: rankStyle.color,
             background: rankStyle.background,
             boxShadow: rankStyle.shadow,
@@ -96,59 +75,21 @@ export default function TradeCard({ rank, trade }: TradeCardProps) {
         </div>
       )}
 
-      <div style={{ minWidth: 0, flex: 1 }}>
+      <div className="trade-card__body">
         <div
-          style={{
-            fontWeight: 600,
-            fontSize: "0.92rem",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            color: "var(--text)",
-            lineHeight: 1.25,
-          }}
+          className="trade-card__headline"
           title={subline ? `${headline} — ${subline}` : headline}
         >
           {headline}
         </div>
 
         {subline && (
-          <div
-            style={{
-              fontSize: "0.72rem",
-              color: "var(--text-faint)",
-              marginTop: "0.1rem",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {subline}
-          </div>
+          <div className="trade-card__subline">{subline}</div>
         )}
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "0.5rem",
-            marginTop: "0.35rem",
-            fontSize: "0.72rem",
-            color: "var(--text-muted)",
-          }}
-        >
+        <div className="trade-card__meta">
           <span
-            style={{
-              padding: "0.1rem 0.5rem",
-              borderRadius: "999px",
-              fontWeight: 600,
-              fontSize: "0.7rem",
-              letterSpacing: "0.04em",
-              color: sideIsYes ? "#7ee2a8" : "#ff8aa1",
-              background: sideIsYes ? "rgba(80, 200, 130, 0.12)" : "rgba(255, 77, 109, 0.12)",
-              border: `1px solid ${sideIsYes ? "rgba(80, 200, 130, 0.3)" : "rgba(255, 77, 109, 0.3)"}`,
-            }}
+            className={`trade-card__side ${sideIsYes ? "trade-card__side--yes" : "trade-card__side--no"}`}
             title={
               trade.subtitle
                 ? `Bought ${sideLabel} on "${trade.subtitle}"`
@@ -164,39 +105,15 @@ export default function TradeCard({ rank, trade }: TradeCardProps) {
 
           <span>{formatTradeDate(trade.trade_date)}</span>
 
-          <span
-            title={trade.ticker}
-            style={{
-              color: "var(--text-faint)",
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              fontSize: "0.7rem",
-              cursor: "help",
-            }}
-          >
+          <span className="trade-card__ticker-dot" title={trade.ticker}>
             ·
           </span>
         </div>
       </div>
 
-      <div
-        style={{
-          flexShrink: 0,
-          fontWeight: 700,
-          fontSize: "0.95rem",
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-          color: "var(--accent)",
-          letterSpacing: "-0.01em",
-        }}
-      >
+      <div className="trade-card__loss">
         −${formatDollar(trade.loss)}
       </div>
     </div>
   );
 }
-
-const medalImgStyle: CSSProperties = {
-  flexShrink: 0,
-  width: 32,
-  height: 32,
-  objectFit: "contain",
-};

@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 
 interface CountdownProps {
   intervalMs: number;
+  className?: string;
 }
 
-export default function Countdown({ intervalMs }: CountdownProps) {
+export default function Countdown({ intervalMs, className }: CountdownProps) {
   const [remaining, setRemaining] = useState(intervalMs);
 
   useEffect(() => {
@@ -18,16 +19,18 @@ export default function Countdown({ intervalMs }: CountdownProps) {
   const seconds = Math.ceil(remaining / 1000);
   return (
     <span
+      className={className}
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: "0.45rem",
-        padding: "0.3rem 0.7rem",
+        padding: "0.35rem 0.75rem",
         borderRadius: "999px",
-        border: "1px solid var(--border)",
+        border: "2px solid var(--border)",
         background: "var(--bg-elev)",
         color: "var(--text-muted)",
         fontSize: "0.78rem",
+        boxShadow: "var(--shadow-sm)",
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
       }}
     >
@@ -36,8 +39,8 @@ export default function Countdown({ intervalMs }: CountdownProps) {
           width: 6,
           height: 6,
           borderRadius: "50%",
-          background: "#5fcf8a",
-          boxShadow: "0 0 8px rgba(95, 207, 138, 0.7)",
+          background: "rgb(50, 150, 92)",
+          boxShadow: "0 0 6px rgba(50, 150, 92, 0.5)",
         }}
       />
       next refresh {seconds}s
