@@ -1,11 +1,11 @@
-export function formatDollar(amount) {
+export function formatDollar(amount: number | string): string {
   return Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 }
 
-export function formatContracts(amount) {
+export function formatContracts(amount: number | string): string {
   const n = Number(amount);
   if (!Number.isFinite(n)) return String(amount ?? "");
   // Kalshi `count_fp` can be fractional but is usually integer-ish; trim
@@ -16,7 +16,7 @@ export function formatContracts(amount) {
   });
 }
 
-export function formatTradeDate(isoDate) {
+export function formatTradeDate(isoDate: string | null | undefined): string {
   if (!isoDate) return "";
   // `trade_date` is already a local YYYY-MM-DD string from the backend, so
   // parse the parts directly to avoid the browser interpreting it as UTC.

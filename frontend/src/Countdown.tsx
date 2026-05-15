@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-export default function Countdown({ intervalMs }) {
+interface CountdownProps {
+  intervalMs: number;
+}
+
+export default function Countdown({ intervalMs }: CountdownProps) {
   const [remaining, setRemaining] = useState(intervalMs);
 
   useEffect(() => {

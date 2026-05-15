@@ -1,22 +1,35 @@
+import type { CSSProperties } from "react";
+import type { Trade } from "./api";
 import { formatDollar, formatContracts, formatTradeDate } from "./utils";
 import goldMedalGif from "./images/gold-medal.gif";
 import silverMedalGif from "./images/silver-medal.gif";
 import bronzeMedalGif from "./images/bronze-medal.gif";
 
-const RANK_STYLES = {
+interface RankStyle {
+  color: string;
+  background: string;
+  shadow: string;
+}
+
+const RANK_STYLES: Record<number, RankStyle> = {
   1: { color: "#1a1300", background: "linear-gradient(135deg, #f7d36a 0%, #c89321 100%)", shadow: "0 0 0 1px rgba(245, 196, 81, 0.4), 0 4px 16px -6px rgba(245, 196, 81, 0.5)" },
   2: { color: "#10141a", background: "linear-gradient(135deg, #e6ecf2 0%, #a4adb6 100%)", shadow: "0 0 0 1px rgba(200, 208, 216, 0.35), 0 4px 16px -6px rgba(200, 208, 216, 0.35)" },
   3: { color: "#1a0d04", background: "linear-gradient(135deg, #e3a06a 0%, #a55c25 100%)", shadow: "0 0 0 1px rgba(217, 135, 74, 0.35), 0 4px 16px -6px rgba(217, 135, 74, 0.4)" },
 };
 
-const DEFAULT_RANK_STYLE = {
+const DEFAULT_RANK_STYLE: RankStyle = {
   color: "var(--text-muted)",
   background: "var(--bg)",
   shadow: "0 0 0 1px var(--border-strong)",
 };
 
-export default function TradeCard({ rank, trade }) {
-  const rankStyle = RANK_STYLES[rank] || DEFAULT_RANK_STYLE;
+interface TradeCardProps {
+  rank: number;
+  trade: Trade;
+}
+
+export default function TradeCard({ rank, trade }: TradeCardProps) {
+  const rankStyle = RANK_STYLES[rank] ?? DEFAULT_RANK_STYLE;
   const sideIsYes = trade.taker_side?.toLowerCase() === "yes";
   const sideLabel = (trade.taker_side || "").toUpperCase();
   const medalClass =
@@ -181,7 +194,7 @@ export default function TradeCard({ rank, trade }) {
   );
 }
 
-const medalImgStyle = {
+const medalImgStyle: CSSProperties = {
   flexShrink: 0,
   width: 32,
   height: 32,

@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-import * as api from "./api.js";
-import Leaderboard from "./Leaderboard.jsx";
-import Countdown from "./Countdown.jsx";
+import * as api from "./api";
+import type { Trade } from "./api";
+import Leaderboard from "./Leaderboard";
+import Countdown from "./Countdown";
 
 const REFRESH_MS = 60_000;
 
 export default function App() {
-  const [trades, setTrades] = useState([]);
-  const [tradesDaily, setTradesDaily] = useState([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [tradesDaily, setTradesDaily] = useState<Trade[]>([]);
   const [count, setCount] = useState(0);
   const [countDaily, setCountDaily] = useState(0);
-  const [totalLoss, setTotalLoss] = useState(0.00);
-  const [totalLossDaily, setTotalLossDaily] = useState(0.00);
-  const [error, setError] = useState(null);
+  const [totalLoss, setTotalLoss] = useState(0.0);
+  const [totalLossDaily, setTotalLossDaily] = useState(0.0);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -33,7 +34,7 @@ export default function App() {
       setTotalLossDaily(totalLossDaily);
       setError(null);
     } catch (e) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

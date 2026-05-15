@@ -1,7 +1,15 @@
-import TradeCard from "./TradeCard.jsx";
-import { formatDollar} from "./utils";
+import TradeCard from "./TradeCard";
+import type { Trade } from "./api";
+import { formatDollar } from "./utils";
 
-export default function Leaderboard({ trades, count, totalLoss, title }) {
+interface LeaderboardProps {
+  trades: Trade[];
+  count: number;
+  totalLoss: number;
+  title?: string;
+}
+
+export default function Leaderboard({ trades, count, totalLoss, title }: LeaderboardProps) {
   return (
     <section
       style={{
