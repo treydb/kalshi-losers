@@ -6,7 +6,7 @@ from kalshi import connect, local_today_iso
 def update_top_ten_all_time():
     with connect() as conn:
         rows = conn.execute("""
-            SELECT ticker, title, subtitle, taker_side, entry_price, contracts, loss, trade_date
+            SELECT ticker, title, subtitle, category, taker_side, entry_price, contracts, loss, trade_date
             FROM losing_trades
             ORDER BY loss DESC
             LIMIT 10
@@ -20,7 +20,7 @@ def update_top_ten_daily():
     today = local_today_iso()
     with connect() as conn:
         rows = conn.execute("""
-            SELECT ticker, title, subtitle, taker_side, entry_price, contracts, loss, trade_date
+            SELECT ticker, title, subtitle, category, taker_side, entry_price, contracts, loss, trade_date
             FROM losing_trades
             WHERE trade_date = ?
             ORDER BY loss DESC

@@ -25,24 +25,16 @@ export default function Countdown({ intervalMs, className }: CountdownProps) {
         alignItems: "center",
         gap: "0.45rem",
         padding: "0.35rem 0.75rem",
-        borderRadius: "999px",
+        borderRadius: "var(--radius-sm)",
         border: "2px solid var(--border)",
         background: "var(--bg-elev)",
-        color: "var(--text-muted)",
+        color: "var(--text)",
         fontSize: "0.78rem",
         boxShadow: "var(--shadow-sm)",
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
       }}
     >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: "rgb(50, 150, 92)",
-          boxShadow: "0 0 6px rgba(50, 150, 92, 0.5)",
-        }}
-      />
+      <span className="countdown__live-dot" aria-hidden />
       next refresh {seconds}s
     </span>
   );

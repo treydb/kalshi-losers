@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --bg: #e8ddbb;
-  --bg-accent: rgb(40, 40, 40);
+  --bg-accent: rgb(0, 0, 0);
   --bg-elev: #fafafa;
   --bg-elev-hover: #d6d6d6;
   --border: #232a33;
@@ -13,9 +13,14 @@
   --red: #b60021;
   --accent: #b60021;
   --accent-soft: rgba(182, 0, 33, 0.1);
+  --taker-yes: rgb(72, 207, 128);
+  --taker-no: rgb(229, 95, 95);
+  --taker-yes-glow: rgba(72, 207, 128, 0.5);
+  --taker-no-glow: rgba(229, 95, 95, 0.5);
   --gold: #f5c451;
   --silver: #c8d0d8;
   --bronze: #d9874a;
+  --medal-card-border: #000000;
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -70,31 +75,6 @@ ul {
 .medal-card {
   border-width: 3px !important;
   border-style: solid !important;
-  box-shadow: var(--shadow-sm);
-}
-
-.first-place {
-  border-color: var(--gold) !important;
-  box-shadow:
-    var(--shadow-sm),
-    0 0 0 1px rgba(245, 196, 81, 0.25),
-    0 2px 12px rgba(245, 196, 81, 0.22);
-}
-
-.second-place {
-  border-color: var(--silver) !important;
-  box-shadow:
-    var(--shadow-sm),
-    0 0 0 1px rgba(200, 208, 216, 0.2),
-    0 2px 12px rgba(200, 208, 216, 0.18);
-}
-
-.third-place {
-  border-color: var(--bronze) !important;
-  box-shadow:
-    var(--shadow-sm),
-    0 0 0 1px rgba(217, 135, 74, 0.22),
-    0 2px 12px rgba(217, 135, 74, 0.2);
 }
 
 .app-shell {
@@ -148,6 +128,15 @@ ul {
   border-radius: var(--radius-sm);
 }
 
+.countdown__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--taker-yes);
+  box-shadow: 0 0 6px var(--taker-yes-glow);
+}
+
 .leaderboard-section {
   margin-top: 2rem;
   padding: 1.15rem;
@@ -159,23 +148,35 @@ ul {
 
 .leaderboard-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 3px solid var(--border);
 }
 
 .leaderboard-title {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(1.12rem, 3vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  text-transform: none;
   color: var(--text);
+  padding-left: 0.7rem;
+  border-left: 5px solid var(--accent);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .leaderboard-count {
-  font-size: 0.7rem;
-  color: var(--text-faint);
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bg-accent);
 }
 
 .leaderboard-empty {
@@ -230,7 +231,32 @@ ul {
   border: 3px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease;
+}
+
+.trade-card.medal-card {
+  border-color: var(--medal-card-border) !important;
+  box-shadow: var(--shadow-sm), 0 2px 14px rgba(0, 0, 0, 0.1);
+}
+
+.trade-card.medal-card:hover {
+  filter: brightness(0.96);
+}
+
+.trade-card.medal-card.first-place {
+  background: var(--gold) !important;
+}
+
+.trade-card.medal-card.second-place {
+  background: var(--silver) !important;
+}
+
+.trade-card.medal-card.third-place {
+  background: var(--bronze) !important;
 }
 
 .trade-card__rank {
@@ -297,11 +323,11 @@ ul {
 }
 
 .trade-card__side--yes {
-  background: rgb(72, 207, 128);
+  background: var(--taker-yes);
 }
 
 .trade-card__side--no {
-  background: rgb(229, 95, 95);
+  background: var(--taker-no);
 }
 
 .trade-card__ticker-dot {

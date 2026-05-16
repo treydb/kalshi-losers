@@ -48,11 +48,11 @@ export default function TradeCard({ rank, trade }: TradeCardProps) {
     <div
       className={cardClass}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--bg-elev-hover)";
+        if (!medalClass) e.currentTarget.style.background = "var(--bg-elev-hover)";
         if (!medalClass) e.currentTarget.style.borderColor = "var(--border-strong)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = "var(--bg-elev)";
+        if (!medalClass) e.currentTarget.style.background = "var(--bg-elev)";
         if (!medalClass) e.currentTarget.style.borderColor = "var(--border)";
       }}
     >

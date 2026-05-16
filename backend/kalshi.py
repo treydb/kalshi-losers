@@ -61,6 +61,14 @@ def connect():
         conn.close()
 
 
+def _ensure_markets_category_column(conn):
+    cols = {
+        row["name"] for row in conn.execute("PRAGMA table_info(markets)")
+    }
+    if "category" not in cols:
+        conn.execute("ALTER TABLE markets ADD COLUMN category TEXT")
+
+
 def _ensure_indexes(conn):
     # Backs `ORDER BY loss DESC LIMIT 10` and `WHERE trade_date = ? ORDER BY loss DESC`.
     conn.execute(
@@ -77,9 +85,8 @@ def init_db():
     """Create / migrate the schema.
 
     Storage layout:
-      - `markets`           : one row per ticker holding title/subtitle (was
-                              previously duplicated on every trade row, ~59
-                              bytes * N trades of pure duplication).
+      - `markets`           : one row per ticker holding title/subtitle/category
+                              (`category` is optional; filled by classifiers later).
       - `losing_trades_raw` : the actual append-only trade rows, without the
                               denormalized text columns.
       - `losing_trades`     : a VIEW that joins the two and exposes the exact
@@ -98,9 +105,11 @@ def init_db():
             CREATE TABLE IF NOT EXISTS markets (
                 ticker TEXT PRIMARY KEY,
                 title TEXT,
-                subtitle TEXT
+                subtitle TEXT,
+                category TEXT
             )
         """)
+        _ensure_markets_category_column(conn)
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS losing_trades_raw (
@@ -127,11 +136,12 @@ def init_db():
             # which is robust against rows that were inserted before the
             # title/subtitle columns existed (those are NULL).
             conn.execute(f"""
-                INSERT OR IGNORE INTO markets (ticker, title, subtitle)
+                INSERT OR IGNORE INTO markets (ticker, title, subtitle, category)
                 SELECT
                     ticker,
                     COALESCE(MAX(NULLIF({title_expr}, '')), ''),
-                    COALESCE(MAX(NULLIF({subtitle_expr}, '')), '')
+                    COALESCE(MAX(NULLIF({subtitle_expr}, '')), ''),
+                    NULL
                 FROM losing_trades
                 GROUP BY ticker
             """)
@@ -146,14 +156,17 @@ def init_db():
             conn.execute("DROP TABLE losing_trades")
             migrated = True
 
-        # LEFT JOIN so a missing markets row never silently drops a trade.
+        # VIEW definition must be recreated when columns change (SQLite has no
+        # ALTER VIEW). LEFT JOIN so a missing markets row never drops a trade.
+        conn.execute("DROP VIEW IF EXISTS losing_trades")
         conn.execute("""
-            CREATE VIEW IF NOT EXISTS losing_trades AS
+            CREATE VIEW losing_trades AS
             SELECT
                 t.trade_id,
                 t.ticker,
                 m.title,
                 m.subtitle,
+                m.category,
                 t.taker_side,
                 t.entry_price,
                 t.contracts,
@@ -236,11 +249,16 @@ def save_losing_trades(markets):
             losing_side = "no" if result == "yes" else "yes"
             subtitle = (market.get(f"{losing_side}_sub_title") or "")
 
-            # One row per ticker in `markets`; the title/subtitle are no longer
-            # duplicated on every trade row. INSERT OR REPLACE keeps the entry
-            # in sync if Kalshi ever revises the text.
+            # One row per ticker in `markets`; upsert title/subtitle only so an
+            # existing `category` set elsewhere is not wiped on refresh.
             conn.execute(
-                "INSERT OR REPLACE INTO markets (ticker, title, subtitle) VALUES (?, ?, ?)",
+                """
+                INSERT INTO markets (ticker, title, subtitle)
+                VALUES (?, ?, ?)
+                ON CONFLICT(ticker) DO UPDATE SET
+                    title = excluded.title,
+                    subtitle = excluded.subtitle
+                """,
                 (ticker, title, subtitle),
             )
 

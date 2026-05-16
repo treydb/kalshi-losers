@@ -5,6 +5,7 @@ export interface Trade {
   taker_side?: string;
   title?: string;
   subtitle?: string;
+  category?: string | null;
   contracts: number;
   entry_price: number;
   trade_date: string;

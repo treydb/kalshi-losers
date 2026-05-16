@@ -16,7 +16,7 @@ export default function Leaderboard({ trades, count, totalLoss, title }: Leaderb
         <h2 className="leaderboard-title">{title || "Leaderboard"}</h2>
         {trades.length > 0 && (
           <span className="leaderboard-count">
-            {trades.length} {trades.length === 1 ? "trade" : "trades"}
+            Top 10
           </span>
         )}
       </div>
