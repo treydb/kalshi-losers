@@ -11,7 +11,8 @@ state: dict = {"top_ten": [],
                "count": 0,
                "daily_count": 0,
                "total_loss": 0,
-               "daily_total_loss": 0}
+               "daily_total_loss": 0,
+               "category_counts": []}
 
 _scheduler: BackgroundScheduler | None = None
 
@@ -28,6 +29,7 @@ def _refresh() -> None:
     state["daily_count"] = update_daily_count()
     state["total_loss"] = update_total_loss()
     state["daily_total_loss"] = update_daily_total_loss()
+    state["category_counts"] = update_category_counts()
 
 
 def refresh_now() -> dict:
@@ -38,7 +40,8 @@ def refresh_now() -> dict:
         "count": state["count"],
         "daily_count": state["daily_count"],
         "total_loss": state["total_loss"],
-        "daily_total_loss": state["daily_total_loss"]
+        "daily_total_loss": state["daily_total_loss"],
+        "category_counts": state["category_counts"],
     }
 
 def get_top_ten() -> list[dict]:
@@ -54,6 +57,9 @@ def get_total_loss() -> float:
 def get_daily_total_loss() -> float:
     return state["daily_total_loss"]
 
+def get_category_counts() -> list[dict]:
+    return state["category_counts"]
+
 def start() -> BackgroundScheduler:
     global _scheduler
     if _scheduler is not None:
@@ -66,6 +72,7 @@ def start() -> BackgroundScheduler:
     state["daily_count"] = update_daily_count()
     state["total_loss"] = update_total_loss()
     state["daily_total_loss"] = update_daily_total_loss()
+    state["category_counts"] = update_category_counts()
     _scheduler = BackgroundScheduler()
     # Runs once at startup, then every 5 minutes to match Kalshi's lookback window.
     _scheduler.add_job(_refresh, "interval", minutes=5, next_run_time=datetime.now())

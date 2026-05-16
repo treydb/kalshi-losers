@@ -58,3 +58,16 @@ def update_daily_total_loss():
             WHERE trade_date = ?
         """, (today,)).fetchone()
     return round(row[0], 2)
+
+def update_category_counts():
+    with connect() as conn:
+        rows = conn.execute("""
+            SELECT
+                COALESCE(category, 'Unknown') AS category,
+                COUNT(*) AS count
+            FROM losing_trades
+            GROUP BY category
+            ORDER BY count DESC
+        """).fetchall()
+    return [dict(row) for row in rows]
+

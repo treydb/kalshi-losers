@@ -32,6 +32,15 @@ interface TradesTotalLossDailyResponse {
   daily_total_loss?: number;
 }
 
+export interface CategoryCount {
+  category: string;
+  count: number;
+}
+
+interface CategoryCountsResponse {
+  category_counts?: CategoryCount[];
+}
+
 export async function fetchTrades(): Promise<Trade[]> {
   const res = await fetch(`${BASE}/trades`);
   if (!res.ok) throw new Error(`Failed to fetch trades: ${res.status}`);
@@ -72,4 +81,11 @@ export async function fetchTradesTotalLossDaily(): Promise<number> {
   if (!res.ok) throw new Error(`Failed to fetch trades total loss daily: ${res.status}`);
   const data: TradesTotalLossDailyResponse = await res.json();
   return data.daily_total_loss ?? 0;
+}
+
+export async function fetchCategoryCounts(): Promise<CategoryCount[]> {
+  const res = await fetch(`${BASE}/trades/count/by_category`);
+  if (!res.ok) throw new Error(`Failed to fetch category counts: ${res.status}`);
+  const data: CategoryCountsResponse = await res.json();
+  return data.category_counts ?? [];
 }

@@ -61,12 +61,10 @@ def connect():
         conn.close()
 
 
-def _ensure_markets_category_column(conn):
-    cols = {
-        row["name"] for row in conn.execute("PRAGMA table_info(markets)")
-    }
-    if "category" not in cols:
-        conn.execute("ALTER TABLE markets ADD COLUMN category TEXT")
+def _ensure_markets_event_ticker_column(conn):
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(markets)")}
+    if "event_ticker" not in cols:
+        conn.execute("ALTER TABLE markets ADD COLUMN event_ticker TEXT")
 
 
 def _ensure_indexes(conn):
@@ -85,14 +83,14 @@ def init_db():
     """Create / migrate the schema.
 
     Storage layout:
-      - `markets`           : one row per ticker holding title/subtitle/category
-                              (`category` is optional; filled by classifiers later).
+      - `markets`           : one row per ticker holding title/subtitle (was
+                              previously duplicated on every trade row, ~59
+                              bytes * N trades of pure duplication).
+      - `events`            : one row per event_ticker holding category.
       - `losing_trades_raw` : the actual append-only trade rows, without the
                               denormalized text columns.
-      - `losing_trades`     : a VIEW that joins the two and exposes the exact
-                              same column shape the rest of the app
-                              (`stats.py`) already queries. This keeps the
-                              normalization invisible to callers.
+      - `losing_trades`     : a VIEW joining raw + markets + events so callers
+                              (`stats.py`) get category without extra joins.
     """
     migrated = False
     with connect() as conn:
@@ -106,10 +104,17 @@ def init_db():
                 ticker TEXT PRIMARY KEY,
                 title TEXT,
                 subtitle TEXT,
+                event_ticker TEXT
+            )
+        """)
+        _ensure_markets_event_ticker_column(conn)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS events (
+                event_ticker TEXT PRIMARY KEY,
                 category TEXT
             )
         """)
-        _ensure_markets_category_column(conn)
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS losing_trades_raw (
@@ -136,12 +141,11 @@ def init_db():
             # which is robust against rows that were inserted before the
             # title/subtitle columns existed (those are NULL).
             conn.execute(f"""
-                INSERT OR IGNORE INTO markets (ticker, title, subtitle, category)
+                INSERT OR IGNORE INTO markets (ticker, title, subtitle)
                 SELECT
                     ticker,
                     COALESCE(MAX(NULLIF({title_expr}, '')), ''),
-                    COALESCE(MAX(NULLIF({subtitle_expr}, '')), ''),
-                    NULL
+                    COALESCE(MAX(NULLIF({subtitle_expr}, '')), '')
                 FROM losing_trades
                 GROUP BY ticker
             """)
@@ -156,8 +160,8 @@ def init_db():
             conn.execute("DROP TABLE losing_trades")
             migrated = True
 
-        # VIEW definition must be recreated when columns change (SQLite has no
-        # ALTER VIEW). LEFT JOIN so a missing markets row never drops a trade.
+        # VIEW must be recreated when columns change (SQLite has no ALTER VIEW).
+        # LEFT JOIN so missing markets/events rows never drop a trade.
         conn.execute("DROP VIEW IF EXISTS losing_trades")
         conn.execute("""
             CREATE VIEW losing_trades AS
@@ -166,7 +170,7 @@ def init_db():
                 t.ticker,
                 m.title,
                 m.subtitle,
-                m.category,
+                e.category,
                 t.taker_side,
                 t.entry_price,
                 t.contracts,
@@ -174,9 +178,14 @@ def init_db():
                 t.trade_date
             FROM losing_trades_raw AS t
             LEFT JOIN markets AS m ON m.ticker = t.ticker
+            LEFT JOIN events AS e ON e.event_ticker = m.event_ticker
         """)
 
         _ensure_indexes(conn)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_markets_event_ticker "
+            "ON markets(event_ticker)"
+        )
 
     # VACUUM rewrites the file to release the space the dropped table held.
     # It cannot run inside a transaction, hence the separate connection.
@@ -233,8 +242,54 @@ def _fetch_market_trades(ticker):
     return trades
 
 
+def _fetch_event_category(event_ticker: str) -> str | None:
+    """Resolve category via series (canonical); fall back to event.category."""
+    r = requests.get(f"{API_BASE}/events/{event_ticker}")
+    r.raise_for_status()
+    time.sleep(0.05)
+    event = r.json().get("event") or {}
+
+    series_ticker = event.get("series_ticker")
+    if series_ticker:
+        sr = requests.get(f"{API_BASE}/series/{series_ticker}")
+        sr.raise_for_status()
+        time.sleep(0.05)
+        category = (sr.json().get("series") or {}).get("category")
+        if category:
+            return category
+
+    return event.get("category")
+
+
+def enrich_events(conn, event_tickers: set[str]) -> None:
+    """Fetch and cache categories for event tickers not yet in `events`."""
+    for event_ticker in event_tickers:
+        if not event_ticker:
+            continue
+        cached = conn.execute(
+            "SELECT 1 FROM events WHERE event_ticker = ? AND category IS NOT NULL",
+            (event_ticker,),
+        ).fetchone()
+        if cached:
+            continue
+        try:
+            category = _fetch_event_category(event_ticker)
+        except requests.RequestException as e:
+            print(f"Failed to fetch category for {event_ticker}: {e}")
+            continue
+        conn.execute(
+            """
+            INSERT INTO events (event_ticker, category)
+            VALUES (?, ?)
+            ON CONFLICT(event_ticker) DO UPDATE SET category = excluded.category
+            """,
+            (event_ticker, category),
+        )
+
+
 def save_losing_trades(markets):
     with connect() as conn:
+        event_tickers: set[str] = set()
         for market in markets:
             ticker = market["ticker"]
             result = market.get("result")
@@ -248,18 +303,19 @@ def save_losing_trades(markets):
             title = market.get("title") or ""
             losing_side = "no" if result == "yes" else "yes"
             subtitle = (market.get(f"{losing_side}_sub_title") or "")
+            event_ticker = market.get("event_ticker")
+            if event_ticker:
+                event_tickers.add(event_ticker)
 
-            # One row per ticker in `markets`; upsert title/subtitle only so an
-            # existing `category` set elsewhere is not wiped on refresh.
+            # One row per ticker in `markets`; the title/subtitle are no longer
+            # duplicated on every trade row. INSERT OR REPLACE keeps the entry
+            # in sync if Kalshi ever revises the text.
             conn.execute(
                 """
-                INSERT INTO markets (ticker, title, subtitle)
-                VALUES (?, ?, ?)
-                ON CONFLICT(ticker) DO UPDATE SET
-                    title = excluded.title,
-                    subtitle = excluded.subtitle
+                INSERT OR REPLACE INTO markets (ticker, title, subtitle, event_ticker)
+                VALUES (?, ?, ?, ?)
                 """,
-                (ticker, title, subtitle),
+                (ticker, title, subtitle, event_ticker),
             )
 
             for trade in _fetch_market_trades(ticker):
@@ -288,6 +344,22 @@ def save_losing_trades(markets):
                         trade_date,
                     ),
                 )
+
+        # Also resolve any markets already stored without a cached category.
+        pending = conn.execute(
+            """
+            SELECT DISTINCT m.event_ticker
+            FROM markets AS m
+            WHERE m.event_ticker IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM events AS e
+                  WHERE e.event_ticker = m.event_ticker
+                    AND e.category IS NOT NULL
+              )
+            """
+        ).fetchall()
+        event_tickers |= {row["event_ticker"] for row in pending}
+        enrich_events(conn, event_tickers)
 
 
 def get_losing_trades():

@@ -54,6 +54,10 @@ def trades_total_loss():
 def trades_daily_total_loss():
     return {"daily_total_loss": scheduler.get_daily_total_loss()}
 
+@app.get("/api/trades/count/by_category")
+def trades_count_by_category():
+    return {"category_counts": scheduler.get_category_counts()}
+
 @app.post("/api/refresh")
 def refresh():
     return scheduler.refresh_now()
