@@ -14,10 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
-KEY_ID = os.getenv("key_ID")
 
-if not KEY_ID:
-    raise RuntimeError("Missing key_ID in backend/.env")
 
 # Hard-pinned so the "today" bucket doesn't drift when the backend runs on a
 # host whose system TZ is UTC (which silently re-introduces the off-by-one-day
