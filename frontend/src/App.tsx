@@ -4,6 +4,7 @@ import type { Trade, CategoryCount } from "./api";
 import Leaderboard from "./Leaderboard";
 import CategoryPieChart from "./CategoryPieChart";
 import Countdown from "./Countdown";
+import About from "./About";
 
 const REFRESH_MS = 60_000;
 
@@ -67,6 +68,8 @@ export default function App() {
         </div>
         <Countdown intervalMs={REFRESH_MS} className="app-header__countdown" />
       </header>
+
+      <About />
 
       {loading && (
         <p className="app-message app-message--loading">Loading…</p>

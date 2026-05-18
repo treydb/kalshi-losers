@@ -145,6 +145,66 @@ ul {
   border-radius: var(--radius-sm);
 }
 
+.about-section {
+  margin-bottom: 1.5rem;
+  border: 3px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-sm);
+}
+
+.about-section__summary {
+  padding: 0.65rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.about-section__summary::-webkit-details-marker {
+  display: none;
+}
+
+.about-section__summary::before {
+  content: "+ ";
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.about-section[open] .about-section__summary::before {
+  content: "− ";
+}
+
+.about-section__body {
+  padding: 0 1rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.about-section__body p + p {
+  margin-top: 0.65rem;
+}
+
+.about-section__body a {
+  color: var(--accent);
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
+.about-section__body a:hover {
+  text-decoration: underline;
+}
+
+.about-section__meta {
+  font-size: 0.78rem;
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .countdown__live-dot {
   width: 6px;
   height: 6px;
