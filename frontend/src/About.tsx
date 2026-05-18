@@ -17,7 +17,7 @@ export default function About() {
           and the all-time hall of shame, plus a breakdown of losses by market category.
         </p>
         <p className="about-section__meta">
-          This page refreshes every minute. Not affiliated with Kalshi.
+          Tracking all trades as of May 16, 2026. Not affiliated with Kalshi.
         </p>
       </div>
     </details>
