@@ -1,8 +1,0 @@
-:{{CADDY_PORT}} {
-	root * {{ROOT}}/frontend/dist
-	file_server
-	try_files {path} /index.html
-	handle /api/* {
-		reverse_proxy 127.0.0.1:8000
-	}
-}
